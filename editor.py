@@ -25,6 +25,7 @@ class Editor(object):
 		self.sprite_work_area = pygame.Rect(0,0, self.Game.screen_width - 150, self.Game.screen_height)
 		self.spritesheet = None
 		self.run = None
+		self.selected_frame = None
 		
 		#draw tool_bar to clean background, so we can avoid re-drawing every time we clean the background.
 		self.Game.clean_background.fill((80,80,80), self.tool_bar)
@@ -42,6 +43,20 @@ class Editor(object):
 		start_point = ( min(pos1[0], pos2[0]), min(pos1[1], pos2[1]) )
 		
 		return pygame.Rect(start_point, (width, height))
+	
+	def get_animation(self):
+		self.rects = [frame.rect for frame in self.frames]
+		if self.rects:
+			return game.Animator(title = "run", 
+											sprite_sheet = self.spritesheet.scaled_image, 
+											number_of_frames = len(self.frames),
+											animation_area = self.spritesheet.rect,#self.rects[0].unionall(self.rects), 
+											frame_list = self.rects, 
+											speed = 100,
+											loop = True, 
+											loop_start_frame = 0)
+											#test = True)
+		return None
 	
 	def open_file(self, path = None):
 		path = path if path else self.path_to_assets
@@ -70,8 +85,11 @@ class Editor(object):
 	def grab_corner(self, point, frames):
 		for frame in frames:
 			for index, corner in enumerate(frame.corners):
-				if corner.collidepoint(point) and frame.rect.collidepoint(point):
-					return {'frame': frame, 'corner': corner, 'index': index}
+				if frame.rect.collidepoint(point):
+					self.selected_frame = self.frames.sprites()[frame.index]
+					if corner.collidepoint(point):
+						return {'frame': frame, 'corner': corner, 'index': index}
+		
 		return False
 	
 	def zoom_in(self):
@@ -81,7 +99,7 @@ class Editor(object):
 			topleft = frame.rect.topleft
 			frame.rect.inflate_ip(frame.rect.w, frame.rect.h )
 			frame.rect.topleft = topleft
-			frame.update_rect()
+			frame.move_and_update(0,0)
 		self.Game.background = self.Game.clean_background.copy()
 		if self.spritesheet:
 			self.spritesheet.rect.inflate_ip(self.spritesheet.rect.w, self.spritesheet.rect.h)
@@ -99,7 +117,7 @@ class Editor(object):
 			topleft = frame.rect.topleft
 			frame.rect.inflate_ip((frame.rect.w  * -.5) , (frame.rect.h  * -.5) )
 			frame.rect.topleft = topleft
-			frame.update_rect()
+			frame.move_and_update(0,0)
 		self.Game.background = self.Game.clean_background.copy()
 		if self.spritesheet:
 			self.spritesheet.rect.inflate_ip((self.spritesheet.rect.w  * -.5) , (self.spritesheet.rect.h  * -.5) )
@@ -117,9 +135,22 @@ class Editor(object):
 		return None
 	
 	def handle_events(self):
-		self.actions = self.Game.get_input()
+		self.actions, events = self.Game.get_input(return_events = True)
 		self.mouse_events = pygame.event.get([pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION])
 		
+		if self.selected_frame:
+			if 'P1_LEFT' in self.actions:
+				self.selected_frame.move_and_update(-1, 0)
+			if 'P1_RIGHT' in self.actions:
+				self.selected_frame.move_and_update(1, 0)
+			if 'P1_UP' in self.actions:
+				self.selected_frame.move_and_update(0, -1)
+			if 'P1_DOWN' in self.actions:
+				self.selected_frame.move_and_update(0, 1)
+			refresh_animation = [True for event in events if event.type == pygame.KEYUP and 273 <= event.key <= 276]
+			if refresh_animation and self.spritesheet:
+				self.run = self.get_animation()
+			
 		for event in self.mouse_events:
 
 			#CLICK BUTTONS
@@ -167,17 +198,9 @@ class Editor(object):
 								self.grab_frame['frame'].kill()
 						self.grab_frame = False
 					#UPDATE PREVIEW ANIMATION
-					self.rects = [frame.rect.move(-self.sprite_work_area.left,0) for frame in self.frames]
-					if self.rects:
-						self.run = game.Animator(title = "run", 
-												sprite_sheet = self.spritesheet.scaled_image, 
-												number_of_frames = len(self.frames),
-												animation_area = self.spritesheet.rect,#self.rects[0].unionall(self.rects), 
-												frame_list = self.rects, 
-												speed = 100,
-												loop = True, 
-												loop_start_frame = 0)
-												#test = True)
+					if self.spritesheet:
+						self.run = self.get_animation()
+						
 				#RESIZE FRAME
 				if pygame.mouse.get_pressed()[0] and event.type == pygame.MOUSEMOTION:
 					if self.grab_frame:
@@ -220,6 +243,7 @@ class Editor(object):
 			#self.update_rects.extend([item.rect for item in self.layer_objects.sprites()])
 			self.layer_objects.clear(self.screen, self.Game.background)
 			self.update_rects.extend(self.layer_objects.draw(self.screen))
+			if self.selected_frame in self.frames.sprites(): pygame.draw.rect(self.screen, (0,255,255), self.selected_frame.rect, 1)
 			
 			
 			if self.run: 
@@ -229,6 +253,7 @@ class Editor(object):
 				self.run.rect.top = 200
 				self.screen.blit(self.run.image, (0,200))
 				self.update_rects.append(self.run.rect)
+				
 			#self.popup_buttons.clear(self.screen, self.Game.background_image)
 			#self.popup_buttons.draw(self.screen)
 			

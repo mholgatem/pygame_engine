@@ -102,10 +102,8 @@ class Frame(pygame.sprite.Sprite):
 		self.rect = rect
 		self.image = pygame.Surface((self.rect.w, self.rect.h), pygame.SRCALPHA, 32).convert_alpha()
 		pygame.draw.rect(self.image, GREEN, pygame.Rect(0, 0, self.rect.w, self.rect.h), 1)
-		self.selected = True
 		self.count = 1
 		self.index = index
-		self.selected = False
 		
 		corner_x = (0, self.rect.w)
 		corner_y = (0, self.rect.h)
@@ -116,34 +114,14 @@ class Frame(pygame.sprite.Sprite):
 				pygame.draw.circle(self.image, WHITE, (x,y), 7)
 				self.corners.append(pygame.Rect(self.rect.x - 8 + x, self.rect.y - 8 + y, 16, 16))
 	
-	def set_selected(self):
-		self.selected = True
+	
+	def move_and_update(self, x, y):
+
 		GREEN = (0,255,0)
-		CYAN = (0,255,255)
 		BLACK = (0,0,0)
 		WHITE = (255,255,255)
-	
-		self.rect = pygame.Rect(self.corners[0].center, (self.corners[2].centerx - self.corners[0].centerx, self.corners[1].centery - self.corners[0].centery))
-		self.rect.normalize()
 		
-		self.image = pygame.Surface((self.rect.w, self.rect.h), pygame.SRCALPHA, 32).convert_alpha()
-		pygame.draw.rect(self.image, CYAN, pygame.Rect(0, 0, self.rect.w, self.rect.h), 1)
-		
-		corner_x = (0, self.rect.w)
-		corner_y = (0, self.rect.h)
-
-		for x in corner_x:
-			for y in corner_y:
-				pygame.draw.circle(self.image, CYAN, (x,y), 8)
-				pygame.draw.circle(self.image, WHITE, (x,y), 7)
-	
-	def update_rect(self):
-		self.selected = False
-		GREEN = (0,255,0)
-		CYAN = (0,255,255)
-		BLACK = (0,0,0)
-		WHITE = (255,255,255)
-
+		self.rect.move_ip(x,y)
 		self.image = pygame.Surface((self.rect.w, self.rect.h), pygame.SRCALPHA, 32).convert_alpha()
 		pygame.draw.rect(self.image, GREEN, pygame.Rect(0, 0, self.rect.w, self.rect.h), 1)
 		

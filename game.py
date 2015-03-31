@@ -49,15 +49,10 @@ class Game(object):
 		self.screen.blit(self.background_image, (0,0))
 		pygame.display.flip()
 	
-	def get_input(self, event_type = [pygame.KEYDOWN, pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN, pygame.JOYHATMOTION]):
+	def get_input(self, event_type = [pygame.KEYDOWN, pygame.KEYUP, pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN, pygame.JOYHATMOTION], return_events = False ):
 		events = pygame.event.get(event_type)
-		
-		#actions = []
-		
-		#for event in events:
-		#	action = self.controller.get_action(event)
-		#	if action is not None: actions.append(action)
-		
+		if return_events:
+			return (self.controller.get_action(), events)
 		return self.controller.get_action()
 	
 	def set_number_of_layers(self, number_of_layers):
@@ -75,9 +70,11 @@ class Game(object):
 	def gravity(self):
 		return (self.GRAVITY_FORCE * self.pixels_per_meter) / self.frames_per_second #add this to y velocity every frame
 	
-	def tooltip(self, text, fg_color = (255,255,255), bg_color = (83,83,83), font_size = 12):
-		self.font = pygame.font.Font('assets/font.ttf', font_size) #for labeling frames
-		return self.font.render(text, 1, fg_color, bg_color)
+	class tooltip(object):
+		def __init__(self, text, fg_color = (255,255,255), bg_color = (83,83,83), font_size = 12):
+			self.font = pygame.font.Font('assets/font.ttf', font_size) #for labeling frames
+			self.image = self.font.render(text, 1, fg_color, bg_color)
+			self.rect = self.image.get_rect()
 		
 		
 class velocity(object):
